@@ -16,11 +16,6 @@ const BleManagerModule = NativeModules.BleManager
 
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule)
 
-interface beaconItem {
-  ID: string,
-  Name: string
-}
-
 const BeaconList = (props: {
   scanStatus:string,
   style:Object
