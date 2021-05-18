@@ -20,9 +20,9 @@ const BeaconList = (props: {
   scanStatus:string,
   style:Object
 }) => {
-  let bles = new Map()
+  let devices = new Map()
   const [list, setList] = useState([])
-  const [isScanning, setScanning] = useState(false)
+  const [closest, setClosest] = useState('')
 
   const renderPer = (item:any) => {
     return (
@@ -36,67 +36,75 @@ const BeaconList = (props: {
 
   const scanPeripheral = () => {
     console.log("scanning peripherals")
-    bles.clear()
-    BleManager.scan([],3,true).then(() => {
-      setScanning(true)
+    BleManager.enableBluetooth()
+    devices.clear()
+    //setClosest('')
+    BleManager.scan([], myBeaconData.scanDuration, true).then(() => {
+      //setScanning(true)
     }).catch(e => {
       console.log(e)
     })
   }
 
-  const handleDiscoverPeripheral = (ble: any) => {
-    if (ble) {
+  const deviceToList = () => {
+    const devList:any = Array.from(devices.values())
+    setList(devList)
+  }
+
+  const handleDiscoverPeripheral = (device: any) => {
+    if (device) {
       let addBle = true
-      let filtereds = myBeaconData.registered.filter((x:any) => x.id==ble.id)
+      const filtereds = myBeaconData.registered.filter((x:any) => x.id==device.id)
       if (filtereds.length>0) {
-        ble.name = filtereds[0].name
+        device.name = filtereds[0].name
       } else {
         if (myBeaconData.useRegistered===true) {
           addBle = false
         } else {
-          ble.name = 'No Name'
+          device.name = 'No Name'
         }
       }
 
       if (addBle) {
-        console.log('new ble is discovered: '+JSON.stringify(ble))
-        ble.distance = Math.abs(ble.rssi) / myBeaconData.rssiMeter
-        bles.set(ble.id, ble)
-        if (bles.size==0) {
-          setList([])
-        } else {
-          const bleList:any = Array.from(bles.values())
-          setList(bleList)
-        }
+        console.log('new ble is discovered: '+JSON.stringify(device))
+        device.distance = Math.abs(device.rssi) / myBeaconData.rssiMeter
+        devices.set(device.id, device)
+        deviceToList()
       }
     }
   }
 
   const handleStopScan = () => {
     console.log("stop scanning peripherals")
-    setScanning(false)
+
+    if (devices.size>0) {
+      const sortedDevices = Array.from(devices.values()).sort((a,b:any)=>a.rssi > b.rssi ? -1 : a.rssi==b.rssi ? 0 : 1)
+      setClosest('closest device: ' + sortedDevices[0].name + ' distance '+sortedDevices[0].distance.toPrecision(2)+'m')
+    }
+    
     if (props.scanStatus=='Scanning') {
       setTimeout(scanPeripheral, 500)
     }
   }
 
+  /*
   const handleDisconnectedPeripheral = (data: any) => {
     if (data && data.peripheral) {
-      const ble = bles.get(data.peripheral)
-      if (ble) {
-        bles.delete(ble.id)
-        const bleList:any = Array.from(bles.values())
-        setList(bleList)
+      const device = devices.get(data.peripheral)
+      if (device) {
+        devices.delete(device.id)
+        deviceToList()
       }
     }
   }
+  */
 
   useEffect(() => {
     BleManager.start({showAlert: false})
 
     bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral)
     bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan )
-    bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral )
+    //bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral )
     //bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic )
 
     if (Platform.OS === 'android' && Platform.Version >= 23) {
@@ -106,9 +114,9 @@ const BeaconList = (props: {
           } else {
             PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION).then((result) => {
               if (result) {
-                console.log("User accept")
+                console.log("User accept permission request")
               } else {
-                console.log("User refuse")
+                console.log("User refuse permission request")
               }
             })
           }
@@ -123,7 +131,7 @@ const BeaconList = (props: {
       console.log('Unmount BLE')
       bleManagerEmitter.removeListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral)
       bleManagerEmitter.removeListener('BleManagerStopScan', handleStopScan )
-      bleManagerEmitter.removeListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral )
+      //bleManagerEmitter.removeListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral )
       //bleManagerEmitter.removeListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic )
     })
   }, [props.scanStatus])
@@ -131,6 +139,7 @@ const BeaconList = (props: {
   return (
     <View style={props.style}>
       <Text>Peripherals found : { list.length }</Text>
+      <Text>{ closest }</Text>
       <FlatList 
         keyExtractor={(item:any) => item.id}
         data={list} 

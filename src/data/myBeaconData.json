@@ -1,5 +1,5 @@
 {
-  "scanDuration":5,
+  "scanDuration":10,
   "rssiMeter":110,
   "useRegistered":true,
   "registered":[
