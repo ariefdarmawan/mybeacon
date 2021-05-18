@@ -78,7 +78,7 @@ const BeaconList = (props: {
     console.log("stop scanning peripherals")
 
     if (devices.size>0) {
-      const sortedDevices = Array.from(devices.values()).sort((a,b:any)=>a.rssi > b.rssi ? -1 : a.rssi==b.rssi ? 0 : 1)
+      const sortedDevices = Array.from(devices.values()).sort((a,b)=>a.rssi > b.rssi ? -1 : a.rssi==b.rssi ? 0 : 1)
       setClosest('closest device: ' + sortedDevices[0].name + ' distance '+sortedDevices[0].distance.toPrecision(2)+'m')
     }
     
