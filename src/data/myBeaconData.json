@@ -1,7 +1,9 @@
 {
   "scanDuration":5,
   "rssiMeter":110,
+  "useRegistered":true,
   "registered":[
-    {"id":"F3:24:DB:3C:E0:26","name":"Green outlet"}
+    {"id":"F3:24:DB:3C:E0:26","name":"Green outlet"},
+    {"id":"CE:B3:94:DC:CA:05","name":"Blue outlet"}
   ]
 }
